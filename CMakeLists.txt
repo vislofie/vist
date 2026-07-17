@@ -1,12 +1,17 @@
 cmake_minimum_required(VERSION 4.2)
-project(kv-srv)
+project(vist)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(kv-srv PRIVATE
-    asio/include
+add_compile_definitions(ASIO_STANDALONE)
+
+add_executable(vist
+    src/main.cpp
+    src/vist.cpp
+    src/vist.h
 )
 
-add_executable(kv-srv
-    main.cpp
+include_directories(vist PRIVATE
+    asio/include
 )
