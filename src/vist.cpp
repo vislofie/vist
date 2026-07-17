@@ -1,15 +1,21 @@
 #include "vist.h"
+#include "asio/read.hpp"
+#include "asio/write.hpp"
 
 #include <iostream>
 
-#include "asio/write.hpp"
-
 using asio::ip::tcp;
+constexpr uint8_t read_buff_size = 8192;
 
 vist::vist(asio::io_context &io, int port) :
 m_io(io),
 m_acceptor(io, tcp::endpoint(tcp::v4(), port)) {
+    m_read_buff = new char[read_buff_size];
     start_accept();
+}
+
+vist::~vist() {
+    delete[] m_read_buff;
 }
 
 void vist::start_accept() {
@@ -20,7 +26,7 @@ void vist::start_accept() {
 
 void vist::handle_accept(const asio::error_code& error, const std::shared_ptr<tcp::socket> &sock) {
     if (!error) {
-        std::string msg = "Hello!";
+        std::string msg = "cool shit dawg";
         std::string response = std::format("HTTP/1.1 200 OK\r\n"
                              "Content-Type: text/plain\r\n"
                              "Content-Length: {}\r\n"
@@ -32,6 +38,11 @@ void vist::handle_accept(const asio::error_code& error, const std::shared_ptr<tc
         [this](const asio::error_code& error, size_t bytes_transferred) {
             handle_write(error, bytes_transferred);
         });
+
+        asio::async_read(*sock, asio::buffer(m_read_buff, read_buff_size),
+        [this](const asio::error_code &error, size_t bytes_transferred) {
+            handle_read(error, bytes_transferred);
+        });
     }
 
     start_accept();
@@ -39,4 +50,8 @@ void vist::handle_accept(const asio::error_code& error, const std::shared_ptr<tc
 
 void vist::handle_write(const asio::error_code &error, size_t bytes_transferred) {
     std::cout << "Transferred " << bytes_transferred << " bytes";
+}
+
+void vist::handle_read(const asio::error_code &error, size_t bytes_transferred) {
+    std::cout.write(m_read_buff, bytes_transferred);
 }
