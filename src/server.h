@@ -11,6 +11,8 @@ using asio::ip::tcp;
 using asio::io_context;
 using asio::error_code;
 
+class storage;
+
 class server {
 public:
     server(io_context& io_context, std::uint16_t port);
@@ -23,4 +25,6 @@ private:
     tcp::acceptor acceptor;
     std::optional<tcp::socket> socket;
     std::unordered_set<std::shared_ptr<session>> clients{};
+
+    std::shared_ptr<storage> m_storage{};
 };
