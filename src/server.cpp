@@ -1,9 +1,22 @@
 #include "server.h"
 
+#include <iostream>
+
+#include "storage/storage.h"
+
 using namespace std::placeholders;
 server::server(asio::io_context &io_context, std::uint16_t port)  :
         io_context(io_context),
         acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
+    auto storage = storage::create();
+    storage->async_write("hi", "no", [storage](const int status_code) {
+        std::cout << status_code << std::endl;
+
+        storage->async_read("hi", [](const std::string& val) {
+            std::cout << val << std::endl;
+        });
+    });
+
     async_accept();
 }
 
