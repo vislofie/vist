@@ -14,4 +14,7 @@ public:
     virtual void async_read(
         std::string_view key,
         std::function<void(const std::string& value)> read_status_message) = 0;
+
+protected:
+    virtual bool is_key_exists(std::string_view key) = 0;
 };

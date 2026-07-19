@@ -24,6 +24,9 @@ public:
         std::string_view key,
         std::function<void(const std::string& value)> read_status_message) override;
 
+protected:
+    virtual bool is_key_exists(std::string_view key) override;
+
 private:
     void run();
 
@@ -74,4 +77,5 @@ private:
 
     std::fstream m_read_file_handle{};
     std::fstream m_write_file_handle{};
+    std::mutex m_file_mutex;
 };

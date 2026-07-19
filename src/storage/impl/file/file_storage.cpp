@@ -33,6 +33,21 @@ void file_storage::async_read(
     }
 }
 
+bool file_storage::is_key_exists(std::string_view key) {
+    {
+        std::lock_guard lock(m_queue_mutex);
+
+        m_read_file_handle.open("state", std::ios::binary | std::ios::in);
+        std::stringstream buff;
+        buff << m_read_file_handle.rdbuf();
+        std::string desired = buff.str();
+        m_read_file_handle.close();
+
+        auto search_target = std::string(key) + '|';
+        return desired.find(search_target) != std::string::npos;
+    }
+}
+
 void file_storage::run() {
     while (true)
     {
@@ -49,17 +64,23 @@ void file_storage::run() {
         if (j->type == read) {
             auto rj = dynamic_cast<read_job*>(j.get());
 
-            m_read_file_handle.open("state", std::ios::binary | std::ios::in);
-            std::stringstream buff;
-            buff << m_read_file_handle.rdbuf();
-            auto str = buff.str();
-            auto str_to_find = rj->key + '|';
+            std::string desired;
+            {
+                std::lock_guard lock(m_queue_mutex);
 
-            auto it = str.find(str_to_find);
+                m_read_file_handle.open("state", std::ios::binary | std::ios::in);
+                std::stringstream buff;
+                buff << m_read_file_handle.rdbuf();
+                desired = buff.str();
+                m_read_file_handle.close();
+            }
+
+            auto str_to_find = rj->key + '|';
+            auto it = desired.find(str_to_find);
             if (it != std::string::npos) {
-                auto it_end = str.find('\n', it);
+                auto it_end = desired.find('\n', it);
                 if (it_end != std::string::npos) {
-                    auto result = std::string(str.begin() + it + str_to_find.size(), str.begin() + it_end);
+                    auto result = std::string(desired.begin() + it + str_to_find.size(), desired.begin() + it_end);
                     rj->callback(result);
                 }
             }
@@ -68,11 +89,19 @@ void file_storage::run() {
         }
         else if (j->type == write) {
             auto wj = dynamic_cast<write_job*>(j.get());
-            const char* text = (wj->key + '|' + wj->value + '\n').c_str();
+            if (is_key_exists(wj->key)) {
+                wj->callback(-1);
+                continue;
+            }
 
-            m_write_file_handle.open("state", std::ios::binary | std::ios::app);
-            m_write_file_handle.write(text, strlen(text));
-            m_write_file_handle.close();
+            {
+                const char* text = (wj->key + '|' + wj->value + '\n').c_str();
+                std::lock_guard lock(m_file_mutex);
+
+                m_write_file_handle.open("state", std::ios::binary | std::ios::app);
+                m_write_file_handle.write(text, strlen(text));
+                m_write_file_handle.close();
+            }
 
             wj->callback(0);
         }
