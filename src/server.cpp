@@ -19,11 +19,13 @@ void server::async_accept() {
         clients.insert(client);
 
         client->start(
-            std::bind(&server::post, this, _1),
+            [this, client](std::string msg) {
+                post(client, msg);
+            },
             [&, weak = std::weak_ptr(client)] {
                 if (auto shared = weak.lock();
                     shared && clients.erase(shared)) {
-                    post("We are one less\n\r");
+                    post(client, "We are one less\n\r");
                 }
             });
 

@@ -10,8 +10,12 @@ class session: public std::enable_shared_from_this<session> {
 public:
     session(tcp::socket&& socket);
 
-    void start(std::function<void(std::string)>&& on_message, std::function<void()>&& on_error);
+    void start(std::function<void(std::string)>&& on_message,
+               std::function<void()>&& on_error);
     void post(const std::string& message);
+
+    bool is_authorized();
+    std::string_view get_username();
 
 private:
     void async_read();
@@ -24,4 +28,6 @@ private:
     std::queue<std::string> outgoing{};
     std::function<void(std::string)> on_message{};
     std::function<void()> on_error;
+
+    std::string m_username{};
 };

@@ -10,7 +10,8 @@ session::session(tcp::socket&& socket)
 
 }
 
-void session::start(std::function<void(std::string)> &&on_message, std::function<void()> &&on_error) {
+void session::start(std::function<void(std::string)> &&on_message,
+                    std::function<void()> &&on_error) {
     this->on_message = std::move(on_message);
     this->on_error = std::move(on_error);
     async_read();
@@ -23,6 +24,14 @@ void session::post(const std::string &message) {
     if (idle) {
         async_write();
     }
+}
+
+bool session::is_authorized() {
+
+}
+
+std::string_view session::get_username() {
+    return m_username;
 }
 
 void session::async_read() {

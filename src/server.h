@@ -18,7 +18,7 @@ public:
     server(io_context& io_context, std::uint16_t port);
 
     void async_accept();
-    void post(const std::string& message) const;
+    void post(std::shared_ptr<session> from, const std::string& message) const;
 
 private:
     io_context& io_context;
