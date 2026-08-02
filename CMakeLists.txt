@@ -25,7 +25,7 @@ add_executable(vist
     src/storage/impl/file/file_storage.cpp
 )
 
-include_directories(vist PRIVATE
+target_include_directories(vist PRIVATE
     ${LIB_PATH}/asio/include
     ${CMAKE_SOURCE_DIR}/src
 )

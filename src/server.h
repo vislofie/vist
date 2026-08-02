@@ -29,6 +29,4 @@ private:
     tcp::acceptor m_acceptor;
     std::optional<tcp::socket> m_socket;
     std::unordered_set<std::shared_ptr<session>> m_clients{};
-
-    std::shared_ptr<storage> m_storage{};
 };

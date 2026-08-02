@@ -4,7 +4,7 @@
 
 class storage {
 public:
-    static std::shared_ptr<storage> instance();
+    static storage* instance();
 
     virtual ~storage() = default;
 

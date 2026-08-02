@@ -5,32 +5,33 @@ using namespace std::placeholders;
 server::server(io_context &io_context, std::uint16_t port)  :
         m_ctxt(io_context),
         m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
-    m_storage = storage::instance();
     async_accept();
 }
 
 void server::async_accept() {
     m_socket.emplace(m_ctxt);
 
-    m_acceptor.async_accept(*m_socket, [&](error_code error) {
+    m_acceptor.async_accept(*m_socket, [this](error_code error) {
         auto client = std::make_shared<session>(std::move(*m_socket));
-        client->post("You need to authorize. Your login: ");
         m_clients.insert(client);
 
         client->start(
-            [this, client](std::string& msg) {
-                process_client_message(client, msg);
-            },
-            [&, weak = std::weak_ptr(client)] {
-                if (auto shared = weak.lock();
-                    shared && m_clients.erase(shared)) {
-                    if (!shared->is_authorized())
-                        return;
+        [this, weak = client->weak_from_this()](std::string& msg) {
+            if (auto shared = weak.lock()) {
+                process_client_message(shared, msg);
+            }
+        },
+        [this, weak = client->weak_from_this()] {
+            if (auto shared = weak.lock();
+                shared && m_clients.erase(shared)) {
+                if (!shared->is_authorized())
+                    return;
 
-                    post_all(std::format("{} quit\n\r", shared->get_username()));
-                }
-            });
+                post_all(std::format("{} quit\n\r", shared->get_username()));
+            }
+        });
 
+        client->post("You need to authorize. Your login: ");
         async_accept();
     });
 }
@@ -61,7 +62,7 @@ bool server::is_user_logged_in(const std::string_view username) const {
 }
 
 void server::process_client_message(std::shared_ptr<session> client, std::string& msg) const {
-    std::erase_if(msg, [](const char c){ return c == '\n' || c == '\r'; });
+    std::erase_if(msg, [](const char c){ return c == '\n' || c == '\r' || c == '|'; });
 
     if (client->get_username().empty()) {
         if (msg.find(' ') != std::string::npos) {

@@ -4,15 +4,11 @@
 #include "storage/impl/file/file_storage.h"
 #endif
 
-static std::shared_ptr<storage> m_storage;
-
-std::shared_ptr<storage> storage::instance() {
-    if (!m_storage) {
+storage* storage::instance() {
 #ifdef FILE_STORAGE
-        m_storage = std::make_shared<file_storage>();
+    static file_storage storage_impl;
 #elif defined(DB_STORAGE)
 #endif
-    }
 
-    return m_storage;
+    return &storage_impl;
 }

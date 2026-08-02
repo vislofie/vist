@@ -61,8 +61,8 @@ void session::async_read() {
         socket,
         streambuf,
         "\n",
-        [this](error_code error, std::size_t bytes_transferred) {
-            on_read(error, bytes_transferred);
+        [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
+            shared->on_read(error, bytes_transferred);
         });
 }
 
@@ -84,8 +84,8 @@ void session::async_write() {
     asio::async_write(
         socket,
         asio::buffer(outgoing.front()),
-        [this](error_code error, std::size_t bytes_transferred) {
-            on_write(error, bytes_transferred);
+        [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
+            shared->on_write(error, bytes_transferred);
         }
     );
 }

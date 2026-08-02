@@ -81,4 +81,6 @@ private:
     std::fstream m_read_file_handle{};
     std::fstream m_write_file_handle{};
     std::mutex m_file_mutex;
+
+    std::condition_variable m_cv;
 };
