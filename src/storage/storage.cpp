@@ -6,7 +6,7 @@
 
 static std::shared_ptr<storage> m_storage;
 
-std::shared_ptr<storage> storage::create() {
+std::shared_ptr<storage> storage::instance() {
     if (!m_storage) {
 #ifdef FILE_STORAGE
         m_storage = std::make_shared<file_storage>();

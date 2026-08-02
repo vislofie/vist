@@ -18,13 +18,17 @@ public:
     server(io_context& io_context, std::uint16_t port);
 
     void async_accept();
-    void post(std::shared_ptr<session> from, const std::string& message) const;
+    void post_from(std::shared_ptr<session> from, const std::string& message) const;
+    void post_all(const std::string& message) const;
 
 private:
-    io_context& io_context;
-    tcp::acceptor acceptor;
-    std::optional<tcp::socket> socket;
-    std::unordered_set<std::shared_ptr<session>> clients{};
+    bool is_user_logged_in(std::string_view username) const;
+    void process_client_message(std::shared_ptr<session> client, std::string& msg) const;
+
+    io_context& m_ctxt;
+    tcp::acceptor m_acceptor;
+    std::optional<tcp::socket> m_socket;
+    std::unordered_set<std::shared_ptr<session>> m_clients{};
 
     std::shared_ptr<storage> m_storage{};
 };

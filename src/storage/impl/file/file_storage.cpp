@@ -1,6 +1,7 @@
 #include "file_storage.h"
 
 #include <cassert>
+#include <future>
 #include <thread>
 #include <sys/stat.h>
 
@@ -12,13 +13,24 @@ file_storage::file_storage() {
 void file_storage::async_write(
     std::string_view key, std::string_view value,
     const std::function<void(int)> write_status_message) {
-    {
-        std::lock_guard lock(m_queue_mutex);
-        m_job_queue.emplace(std::make_shared<write_job>(
-            write, std::string(key.data()), std::string(value.data()),
-            write_status_message)
-        );
-    }
+
+    std::lock_guard lock(m_queue_mutex);
+    m_job_queue.emplace(std::make_shared<write_job>(
+        write, std::string(key.data()), std::string(value.data()),
+        write_status_message)
+    );
+}
+
+int file_storage::sync_write(std::string_view key, std::string_view value) {
+    std::promise<int> promise;
+    auto future = promise.get_future();
+
+    m_job_queue.emplace(std::make_shared<write_job>(write, std::string(key), std::string(value),
+    [p = &promise](const int status_message) {
+        p->set_value(status_message);
+    }));
+
+    return future.get();
 }
 
 void file_storage::async_read(
@@ -31,6 +43,18 @@ void file_storage::async_read(
             read_status_message)
         );
     }
+}
+
+std::string file_storage::sync_read(std::string_view key) {
+    std::promise<std::string> promise;
+    auto future = promise.get_future();
+
+    m_job_queue.emplace(std::make_shared<read_job>(read, std::string(key),
+    [p = &promise](const std::string& val) {
+        p->set_value(val);
+    }));
+
+    return future.get();
 }
 
 bool file_storage::is_key_exists(std::string_view key) {
@@ -75,6 +99,8 @@ void file_storage::run() {
                 m_read_file_handle.close();
             }
 
+
+
             auto str_to_find = rj->key + '|';
             auto it = desired.find(str_to_find);
             if (it != std::string::npos) {
@@ -82,6 +108,8 @@ void file_storage::run() {
                 if (it_end != std::string::npos) {
                     auto result = std::string(desired.begin() + it + str_to_find.size(), desired.begin() + it_end);
                     rj->callback(result);
+
+                    continue;
                 }
             }
 
