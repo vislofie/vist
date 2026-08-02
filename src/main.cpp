@@ -1,6 +1,6 @@
 #include <iostream>
 #include "asio.hpp"
-#include "server.h"
+#include "server/server.h"
 
 int main(int argc, char *argv[]) {
     try {

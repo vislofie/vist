@@ -8,20 +8,20 @@ using namespace std::placeholders;
 using asio::ip::tcp;
 
 session::session(tcp::socket&& socket)
-: socket(std::move(socket)) {
+: m_socket(std::move(socket)) {
 
 }
 
 void session::start(std::function<void(std::string&)> &&on_message,
                     std::function<void()> &&on_error) {
-    this->on_message = std::move(on_message);
-    this->on_error = std::move(on_error);
+    this->m_on_message = std::move(on_message);
+    this->m_on_error = std::move(on_error);
     async_read();
 }
 
 void session::post(const std::string &message) {
-    bool idle = outgoing.empty();
-    outgoing.push(message);
+    bool idle = m_outgoing_queue.empty();
+    m_outgoing_queue.push(message);
 
     if (idle) {
         async_write();
@@ -53,13 +53,13 @@ void session::set_password(std::string_view password) const {
 }
 
 tcp::socket & session::get_socket() {
-    return socket;
+    return m_socket;
 }
 
 void session::async_read() {
     asio::async_read_until(
-        socket,
-        streambuf,
+        m_socket,
+        m_streambuf,
         "\n",
         [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
             shared->on_read(error, bytes_transferred);
@@ -69,21 +69,21 @@ void session::async_read() {
 void session::on_read(error_code error, std::size_t bytes_transferred) {
     if (!error) {
         std::stringstream message;
-        message << std::istream(&streambuf).rdbuf();
-        streambuf.consume(bytes_transferred);
+        message << std::istream(&m_streambuf).rdbuf();
+        m_streambuf.consume(bytes_transferred);
         std::string text = message.str();
-        on_message(text);
+        m_on_message(text);
         async_read();
     } else {
-        socket.close(error);
-        on_error();
+        m_socket.close(error);
+        m_on_error();
     }
 }
 
 void session::async_write() {
     asio::async_write(
-        socket,
-        asio::buffer(outgoing.front()),
+        m_socket,
+        asio::buffer(m_outgoing_queue.front()),
         [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
             shared->on_write(error, bytes_transferred);
         }
@@ -92,13 +92,13 @@ void session::async_write() {
 
 void session::on_write(error_code error, std::size_t bytes_transferred) {
     if (!error) {
-        outgoing.pop();
+        m_outgoing_queue.pop();
 
-        if (!outgoing.empty()) {
+        if (!m_outgoing_queue.empty()) {
             async_write();
         }
     } else {
-        socket.close(error);
-        on_error();
+        m_socket.close(error);
+        m_on_error();
     }
 }

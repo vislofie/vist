@@ -31,11 +31,11 @@ private:
     void async_write();
     void on_write(error_code error, std::size_t bytes_transferred);
 
-    tcp::socket socket;
-    asio::streambuf streambuf{};
-    std::queue<std::string> outgoing{};
-    std::function<void(std::string&)> on_message{};
-    std::function<void()> on_error;
+    tcp::socket m_socket;
+    asio::streambuf m_streambuf{};
+    std::queue<std::string> m_outgoing_queue{};
+    std::function<void(std::string&)> m_on_message{};
+    std::function<void()> m_on_error;
 
     std::string m_username{};
     bool m_is_authorized{false};

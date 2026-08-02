@@ -15,10 +15,10 @@ add_compile_definitions("${STORAGE_TYPE}_STORAGE")
 
 add_executable(vist
     src/main.cpp
-    src/server.h
-    src/server.cpp
-    src/session.h
-    src/session.cpp
+    src/server/server.h
+    src/server/server.cpp
+    src/server/session.h
+    src/server/session.cpp
     src/storage/storage.h
     src/storage/storage.cpp
     src/storage/impl/file/file_storage.h
