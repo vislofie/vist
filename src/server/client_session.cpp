@@ -3,7 +3,9 @@
 #include <asio/write.hpp>
 
 #include "storage.h"
+#include "../protocol/include/message.h"
 
+struct Message;
 using namespace std::placeholders;
 using asio::ip::tcp;
 
@@ -12,14 +14,16 @@ client_session::client_session(tcp::socket&& socket)
 
 }
 
-void client_session::start(std::function<void(std::string&)> &&on_message,
+void client_session::start(std::function<void(Message&)> &&on_message,
                     std::function<void()> &&on_error) {
     this->m_on_message = std::move(on_message);
     this->m_on_error = std::move(on_error);
     async_read();
 }
 
-void client_session::post(const std::string &message) {
+void client_session::post(const Message& message) {
+    std::lock_guard lock(m_outgoing_queue_mutex);
+
     bool idle = m_outgoing_queue.empty();
     m_outgoing_queue.push(message);
 
@@ -68,11 +72,15 @@ void client_session::async_read() {
 
 void client_session::on_read(error_code error, std::size_t bytes_transferred) {
     if (!error) {
-        std::stringstream message;
-        message << std::istream(&m_streambuf).rdbuf();
+        char buff[sizeof(Message)];
+        std::istream(&m_streambuf).read(buff, bytes_transferred);
         m_streambuf.consume(bytes_transferred);
-        std::string text = message.str();
-        m_on_message(text);
+
+        auto message = Message(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(buff), bytes_transferred));
+        if (!message.is_empty()) {
+            m_on_message(message);
+        }
+
         async_read();
     } else {
         m_socket.close(error);
@@ -83,7 +91,7 @@ void client_session::on_read(error_code error, std::size_t bytes_transferred) {
 void client_session::async_write() {
     asio::async_write(
         m_socket,
-        asio::buffer(m_outgoing_queue.front()),
+        asio::buffer(m_outgoing_queue.front().serialize()),
         [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
             shared->on_write(error, bytes_transferred);
         }

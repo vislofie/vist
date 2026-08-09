@@ -20,4 +20,5 @@ target_include_directories(${UNIT_NAME} PRIVATE
     ${LIB_PATH}/asio/include
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src/storage
+    ${CMAKE_SOURCE_DIR}
 )

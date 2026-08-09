@@ -3,6 +3,8 @@
 #include <asio/streambuf.hpp>
 #include <asio/ip/tcp.hpp>
 
+#include "src/protocol/include/message.h"
+
 using asio::ip::tcp;
 using asio::error_code;
 
@@ -10,9 +12,9 @@ class client_session: public std::enable_shared_from_this<client_session> {
 public:
     client_session(tcp::socket&& socket);
 
-    void start(std::function<void(std::string&)>&& on_message,
+    void start(std::function<void(Message&)>&& on_message,
                std::function<void()>&& on_error);
-    void post(const std::string& message);
+    void post(const Message& message);
 
     bool is_authorized() const;
     void set_is_authorized(bool is_authorized);
@@ -33,8 +35,9 @@ private:
 
     tcp::socket m_socket;
     asio::streambuf m_streambuf{};
-    std::queue<std::string> m_outgoing_queue{};
-    std::function<void(std::string&)> m_on_message{};
+    std::queue<Message> m_outgoing_queue{};
+    std::mutex m_outgoing_queue_mutex{};
+    std::function<void(Message&)> m_on_message{};
     std::function<void()> m_on_error;
 
     std::string m_username{};
