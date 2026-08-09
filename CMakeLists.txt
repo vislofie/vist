@@ -10,22 +10,10 @@ message("LIB PATH = ${LIB_PATH}")
 set(STORAGE_TYPE "FILE")
 message("STORAGE_TYPE = ${STORAGE_TYPE}")
 
-add_compile_definitions(ASIO_STANDALONE)
 add_compile_definitions("${STORAGE_TYPE}_STORAGE")
+add_compile_definitions(ASIO_STANDALONE)
 
-add_executable(vist
-    src/main.cpp
-    src/server/server.h
-    src/server/server.cpp
-    src/server/session.h
-    src/server/session.cpp
-    src/storage/storage.h
-    src/storage/storage.cpp
-    src/storage/impl/file/file_storage.h
-    src/storage/impl/file/file_storage.cpp
-)
+add_subdirectory(src/server)
+add_subdirectory(src/client)
 
-target_include_directories(vist PRIVATE
-    ${LIB_PATH}/asio/include
-    ${CMAKE_SOURCE_DIR}/src
-)
+add_subdirectory(src/storage)

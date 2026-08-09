@@ -11,7 +11,7 @@ void server::async_accept() {
     m_socket.emplace(m_ctxt);
 
     m_acceptor.async_accept(*m_socket, [this](error_code error) {
-        auto client = std::make_shared<session>(std::move(*m_socket));
+        auto client = std::make_shared<client_session>(std::move(*m_socket));
         m_clients.insert(client);
 
         client->start(
@@ -35,7 +35,7 @@ void server::async_accept() {
     });
 }
 
-void server::post_from(std::shared_ptr<session> from, const std::string &message) const {
+void server::post_from(std::shared_ptr<client_session> from, const std::string &message) const {
     for (auto& client : m_clients) {
         if (client == from)
             continue;
@@ -60,7 +60,7 @@ bool server::is_user_logged_in(const std::string_view username) const {
     return false;
 }
 
-void server::process_client_message(std::shared_ptr<session> client, std::string& msg) const {
+void server::process_client_message(std::shared_ptr<client_session> client, std::string& msg) const {
     std::erase_if(msg, [](const char c){ return c == '\n' || c == '\r' || c == '|'; });
 
     if (client->get_username().empty()) {

@@ -6,9 +6,9 @@
 using asio::ip::tcp;
 using asio::error_code;
 
-class session: public std::enable_shared_from_this<session> {
+class client_session: public std::enable_shared_from_this<client_session> {
 public:
-    session(tcp::socket&& socket);
+    client_session(tcp::socket&& socket);
 
     void start(std::function<void(std::string&)>&& on_message,
                std::function<void()>&& on_error);

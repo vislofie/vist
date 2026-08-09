@@ -1,7 +1,7 @@
 #include "storage.h"
 
 #ifdef FILE_STORAGE
-#include "storage/impl/file/file_storage.h"
+#include "impl/file/file_storage.h"
 #endif
 
 storage* storage::instance() {

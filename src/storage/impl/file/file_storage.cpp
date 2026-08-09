@@ -3,7 +3,6 @@
 #include <cassert>
 #include <future>
 #include <thread>
-#include <sys/stat.h>
 
 file_storage::file_storage() {
     auto t = std::thread([this] { run(); });

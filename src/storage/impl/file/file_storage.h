@@ -2,7 +2,7 @@
 #include <fstream>
 #include <queue>
 
-#include "storage/storage.h"
+#include "storage.h"
 
 class job;
 class write_job;
