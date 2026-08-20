@@ -9,16 +9,19 @@ add_executable(${UNIT_NAME}
 )
 
 target_link_directories(${UNIT_NAME}
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}/src/protocol
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src/storage
 )
 target_link_libraries(${UNIT_NAME}
     storage
+    protocol
 )
 
 target_include_directories(${UNIT_NAME} PRIVATE
     ${LIB_PATH}/asio/include
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src/storage
-    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
 )

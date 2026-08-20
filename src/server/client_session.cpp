@@ -3,9 +3,7 @@
 #include <asio/write.hpp>
 
 #include "storage.h"
-#include "../protocol/include/message.h"
 
-struct Message;
 using namespace std::placeholders;
 using asio::ip::tcp;
 
@@ -14,18 +12,18 @@ client_session::client_session(tcp::socket&& socket)
 
 }
 
-void client_session::start(std::function<void(Message&)> &&on_message,
+void client_session::start(std::function<void(std::unique_ptr<Message>&)> &&on_message,
                     std::function<void()> &&on_error) {
     this->m_on_message = std::move(on_message);
     this->m_on_error = std::move(on_error);
     async_read();
 }
 
-void client_session::post(const Message& message) {
+void client_session::post(std::unique_ptr<Message>&& message) {
     std::lock_guard lock(m_outgoing_queue_mutex);
 
     bool idle = m_outgoing_queue.empty();
-    m_outgoing_queue.push(message);
+    m_outgoing_queue.push(std::move(message));
 
     if (idle) {
         async_write();
@@ -64,7 +62,7 @@ void client_session::async_read() {
     asio::async_read_until(
         m_socket,
         m_streambuf,
-        "\n",
+        "",
         [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
             shared->on_read(error, bytes_transferred);
         });
@@ -76,9 +74,9 @@ void client_session::on_read(error_code error, std::size_t bytes_transferred) {
         std::istream(&m_streambuf).read(buff, bytes_transferred);
         m_streambuf.consume(bytes_transferred);
 
-        auto message = Message(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(buff), bytes_transferred));
-        if (!message.is_empty()) {
-            m_on_message(message);
+        auto rcv_msg = Message::create(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(buff), bytes_transferred));
+        if (!rcv_msg->is_empty()) {
+            m_on_message(rcv_msg);
         }
 
         async_read();
@@ -91,7 +89,7 @@ void client_session::on_read(error_code error, std::size_t bytes_transferred) {
 void client_session::async_write() {
     asio::async_write(
         m_socket,
-        asio::buffer(m_outgoing_queue.front().serialize()),
+        asio::buffer(m_outgoing_queue.front()->serialize()),
         [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
             shared->on_write(error, bytes_transferred);
         }

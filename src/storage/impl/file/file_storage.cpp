@@ -86,7 +86,7 @@ bool file_storage::is_key_exists(std::string_view key) {
 }
 
 void file_storage::run() {
-    while (true)
+    for (;;)
     {
         std::shared_ptr<job> j;
         {

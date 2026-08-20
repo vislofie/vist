@@ -13,6 +13,7 @@ message("STORAGE_TYPE = ${STORAGE_TYPE}")
 add_compile_definitions("${STORAGE_TYPE}_STORAGE")
 add_compile_definitions(ASIO_STANDALONE)
 
+add_subdirectory(src/protocol)
 add_subdirectory(src/server)
 add_subdirectory(src/client)
 
