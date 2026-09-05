@@ -9,7 +9,6 @@ public:
     ~AuthMessage() override;
 
     bool deserialize(const std::span<const uint8_t> msg) override;
-    std::vector<uint8_t> serialize() const override;
 
     MessageType get_message_type() const override { return MessageType::Authorization; }
 
@@ -17,6 +16,9 @@ public:
 
     std::string_view get_login()    const noexcept { return m_login; }
     std::string_view get_password() const noexcept { return m_password; }
+
+protected:
+    std::vector<uint8_t> serialize_impl() const override;
 
 private:
     std::string m_login;

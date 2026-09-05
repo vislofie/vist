@@ -1,5 +1,6 @@
 #include "server.h"
 
+#include "protocol/include/defines.h"
 #include "protocol/include/SystemMessage.h"
 
 using namespace std::placeholders;

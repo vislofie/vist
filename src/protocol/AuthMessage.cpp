@@ -35,7 +35,7 @@ bool AuthMessage::deserialize(const std::span<const uint8_t> msg) {
     return true;
 }
 
-std::vector<uint8_t> AuthMessage::serialize() const {
+std::vector<uint8_t> AuthMessage::serialize_impl() const {
     std::vector<uint8_t> result;
 
     result.push_back(static_cast<uint8_t>(get_message_type()));

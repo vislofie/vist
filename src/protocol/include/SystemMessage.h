@@ -15,7 +15,6 @@ public:
     ~SystemMessage() override;
 
     bool deserialize(const std::span<const uint8_t> msg) override;
-    std::vector<uint8_t> serialize() const override;
 
     MessageType get_message_type() const override;
 
@@ -23,6 +22,9 @@ public:
 
     std::string_view get_message();
     SystemMessageType get_system_message_type() const;
+
+protected:
+    std::vector<uint8_t> serialize_impl() const override;
 
 private:
     std::string m_message;

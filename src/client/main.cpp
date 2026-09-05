@@ -26,50 +26,59 @@ int main(int argc, char* argv[]) {
         asio::connect(socket, endpoints);
 
         for (;;) {
-            std::array<char, PACKET_MAX_SIZE> buffer;
+            std::array<char, PACKET_MAX_SIZE> buffer{};
 
             size_t len = socket.read_some(asio::buffer(buffer), ec);
             if (len == 0) {
                 continue;
             }
 
-            auto rcv_msg = Message::create(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(buffer.data()), len));
-            if (rcv_msg == nullptr) {
-                continue;
+            std::vector<std::unique_ptr<Message>> messages;
+            size_t offset = 0;
+            while (len - offset > 0) {
+                uint8_t msg_sz;
+                memcpy(&msg_sz, buffer.data() + offset, sizeof(uint8_t));
+
+                offset += sizeof(uint8_t);
+
+                auto rcv_msg = Message::create(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(buffer.data() + offset), msg_sz));
+                messages.push_back(std::move(rcv_msg));
+
+                offset += msg_sz;
             }
 
-            if (rcv_msg->get_message_type() == MessageType::System) {
-                auto sys_msg = dynamic_cast<SystemMessage*>(rcv_msg.get());
-                if (sys_msg->get_message() == INFO_NEED_AUTH) {
-                    std::string username;
-                    std::string password;
+            for (auto& rcv_msg : messages) {
+                if (rcv_msg->get_message_type() == MessageType::System) {
+                    auto sys_msg = dynamic_cast<SystemMessage*>(rcv_msg.get());
+                    if (sys_msg->get_message() == INFO_NEED_AUTH) {
+                        std::string username;
+                        std::string password;
 
-                    std::cout << "Type your username: ";
-                    std::cin >> username;
-                    std:: cout << "Type your password: ";
-                    std::cin >> password;
+                        std::cout << "Type your username: ";
+                        std::cin >> username;
+                        std:: cout << "Type your password: ";
+                        std::cin >> password;
 
-                    if (username.find(' ') != std::string::npos || username.find('|') != std::string::npos) {
-                        throw std::invalid_argument("username must not contain space or a vertical bar!");
-                    }
+                        if (username.find(' ') != std::string::npos || username.find('|') != std::string::npos) {
+                            throw std::invalid_argument("username must not contain space or a vertical bar!");
+                        }
 
-                    AuthMessage msg(username, password);
-                    auto serialized_msg = msg.serialize();
+                        AuthMessage msg(username, password);
+                        auto serialized_msg = msg.serialize();
+                        serialized_msg.push_back('\n');
 
-                    socket.write_some(asio::buffer(serialized_msg.data(), serialized_msg.size()), ec);
+                        socket.write_some(asio::buffer(serialized_msg.data(), serialized_msg.size()), ec);
 
-                    if (ec) {
-                        std::cerr << ec.message() << std::endl;
-                        return -1;
+                        if (ec) {
+                            std::cerr << ec.message() << std::endl;
+                            return -1;
+                        }
                     }
                 }
+                else {
+                    assert(false);
+                }
             }
-            else {
-                assert(false);
-            }
-
-            auto rcv_msg_serialized = rcv_msg->serialize();
-            std::cout.write(reinterpret_cast<char*>(rcv_msg_serialized.data()), static_cast<uint8_t>(rcv_msg_serialized.size()));
         }
 
     } catch (std::exception& e) {

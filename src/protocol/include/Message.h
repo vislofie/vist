@@ -2,8 +2,6 @@
 
 #include <span>
 
-#include "defines.h"
-
 enum class MessageType : uint8_t {
     System = 0,
     ChatMessage,
@@ -19,8 +17,11 @@ public:
     // TODO: prepend uint16_t length before EACH MESSAGE to read it properly on the server side
 
     virtual bool deserialize(const std::span<const uint8_t> msg) = 0;
-    virtual std::vector<uint8_t> serialize() const = 0;
+    std::vector<uint8_t> serialize();
     virtual MessageType get_message_type() const = 0;
 
     virtual bool is_empty() const = 0;
+
+protected:
+    virtual std::vector<uint8_t> serialize_impl() const = 0;
 };

@@ -62,7 +62,7 @@ void client_session::async_read() {
     asio::async_read_until(
         m_socket,
         m_streambuf,
-        "",
+        "\n",
         [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
             shared->on_read(error, bytes_transferred);
         });
@@ -87,9 +87,12 @@ void client_session::on_read(error_code error, std::size_t bytes_transferred) {
 }
 
 void client_session::async_write() {
+    auto serialized_msg = m_outgoing_queue.front()->serialize();
+    auto buffer = asio::buffer(serialized_msg);
+
     asio::async_write(
         m_socket,
-        asio::buffer(m_outgoing_queue.front()->serialize()),
+        buffer,
         [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
             shared->on_write(error, bytes_transferred);
         }

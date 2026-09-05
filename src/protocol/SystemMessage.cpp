@@ -32,7 +32,7 @@ bool SystemMessage::deserialize(const std::span<const uint8_t> msg) {
     return true;
 }
 
-std::vector<uint8_t> SystemMessage::serialize() const {
+std::vector<uint8_t> SystemMessage::serialize_impl() const {
     std::vector<uint8_t> serialized_message;
 
     if (m_message.empty()) {
