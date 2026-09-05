@@ -1,3 +1,4 @@
+#include <cstring>
 #include "include/SystemMessage.h"
 
 SystemMessage::SystemMessage()

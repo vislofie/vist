@@ -1,5 +1,7 @@
 #pragma once
 #include <memory>
+#include <mutex>
+#include <queue>
 #include <asio/streambuf.hpp>
 #include <asio/ip/tcp.hpp>
 

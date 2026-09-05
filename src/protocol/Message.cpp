@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "include/Message.h"
 #include "include/AuthMessage.h"
 #include "include/SystemMessage.h"

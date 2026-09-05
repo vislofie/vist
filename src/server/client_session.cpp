@@ -1,4 +1,6 @@
 #include "client_session.h"
+
+#include <mutex>
 #include <asio/read_until.hpp>
 #include <asio/write.hpp>
 

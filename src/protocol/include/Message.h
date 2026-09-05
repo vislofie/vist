@@ -1,6 +1,9 @@
 #pragma once
 
+#include <cstdint>
+#include <memory>
 #include <span>
+#include <vector>
 
 enum class MessageType : uint8_t {
     System = 0,

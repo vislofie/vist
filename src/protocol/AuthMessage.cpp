@@ -1,3 +1,4 @@
+#include <cstring>
 #include "include/AuthMessage.h"
 
 AuthMessage::AuthMessage() { }
