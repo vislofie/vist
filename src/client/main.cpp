@@ -65,7 +65,6 @@ int main(int argc, char* argv[]) {
 
                         AuthMessage msg(username, password);
                         auto serialized_msg = msg.serialize();
-                        serialized_msg.push_back('\n');
 
                         socket.write_some(asio::buffer(serialized_msg.data(), serialized_msg.size()), ec);
 

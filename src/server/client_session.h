@@ -5,6 +5,7 @@
 #include <asio/streambuf.hpp>
 #include <asio/ip/tcp.hpp>
 
+#include "protocol/include/defines.h"
 #include "protocol/include/Message.h"
 
 using asio::ip::tcp;
@@ -31,12 +32,14 @@ public:
 
 private:
     void async_read();
-    void on_read(error_code error, std::size_t bytes_transferred);
+    void on_read_header(error_code error, std::size_t bytes_transferred);
+    void on_read_body(error_code error, std::size_t bytes_transferred);
     void async_write();
     void on_write(error_code error, std::size_t bytes_transferred);
 
     tcp::socket m_socket;
-    asio::streambuf m_streambuf{};
+    MSG_HEADER_SIZE m_msg_size{};
+    uint8_t m_msg_payload[255];
     std::queue<std::unique_ptr<Message>> m_outgoing_queue{};
     std::mutex m_outgoing_queue_mutex{};
     std::function<void(std::unique_ptr<Message>&)> m_on_message{};

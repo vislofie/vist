@@ -1,10 +1,12 @@
 #include "client_session.h"
 
 #include <mutex>
+#include <asio/read.hpp>
 #include <asio/read_until.hpp>
 #include <asio/write.hpp>
 
 #include "storage.h"
+#include "protocol/include/defines.h"
 
 using namespace std::placeholders;
 using asio::ip::tcp;
@@ -61,28 +63,42 @@ tcp::socket & client_session::get_socket() {
 }
 
 void client_session::async_read() {
-    asio::async_read_until(
+    asio::async_read(
         m_socket,
-        m_streambuf,
-        "\n",
+        asio::buffer(&m_msg_size, sizeof(m_msg_size)),
         [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
-            shared->on_read(error, bytes_transferred);
-        });
+            shared->on_read_header(error, bytes_transferred);
+    });
 }
 
-void client_session::on_read(error_code error, std::size_t bytes_transferred) {
+void client_session::on_read_header(error_code error, std::size_t bytes_transferred) {
     if (!error) {
-        char buff[sizeof(Message)];
-        std::istream(&m_streambuf).read(buff, bytes_transferred);
-        m_streambuf.consume(bytes_transferred);
-
-        auto rcv_msg = Message::create(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(buff), bytes_transferred));
-        if (!rcv_msg->is_empty()) {
-            m_on_message(rcv_msg);
+        if (m_msg_size == 0) {
+            async_read();
+            return;
         }
 
-        async_read();
+        asio::async_read(
+            m_socket,
+            asio::buffer(m_msg_payload, m_msg_size),
+            [shared = shared_from_this()](error_code error, std::size_t bytes_transferred) {
+                shared->on_read_body(error, bytes_transferred);
+            }
+        );
     } else {
+        m_socket.close(error);
+        m_on_error();
+    }
+}
+
+void client_session::on_read_body(error_code error, std::size_t bytes_transferred) {
+    if (!error) {
+        auto msg = Message::create(std::span(m_msg_payload, m_msg_size));
+        m_on_message(msg);
+
+        async_read();
+    }
+    else {
         m_socket.close(error);
         m_on_error();
     }
